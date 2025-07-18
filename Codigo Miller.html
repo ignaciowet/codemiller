@@ -646,6 +646,8 @@
                     const presetName = this.dataset.preset;
                     if (presetName) {
                         loadPreset(presetName);
+                        // Refresh cards so save operations use the new preset
+                        createCards();
                     }
                 });
             });
@@ -1087,6 +1089,8 @@
                 });
                 this.classList.add('border-yellow-500', 'border-2');
                 loadPreset(presetId);
+                // Ensure gameState.cards reflects the newly chosen preset
+                createCards();
             });
             
             // Add edit button event listener
