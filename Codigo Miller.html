@@ -858,14 +858,22 @@
             if (card.type === 'red-team') {
                 gameState.redCardsLeft--;
                 updateTeamCounts();
-                checkForWin('red');
+                if (checkForWin('red')) {
+                    declareWinner('red');
+                }
             } else if (card.type === 'blue-team') {
                 gameState.blueCardsLeft--;
                 updateTeamCounts();
-                checkForWin('blue');
+                if (checkForWin('blue')) {
+                    declareWinner('blue');
+                }
             } else if (card.type === 'assassin') {
                 // Notify that assassin was found
                 showSnackbar('¡Carta asesina revelada!');
+
+                // Declare the opposing team as the winner
+                const winningTeam = gameState.currentTeam === 'red' ? 'blue' : 'red';
+                declareWinner(winningTeam);
             }
             
             // Update spymaster view to reflect the revealed card
