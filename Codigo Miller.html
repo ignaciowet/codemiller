@@ -64,13 +64,6 @@
             background-color: #212121;
             color: white;
         }
-        .icon {
-            position: absolute;
-            opacity: 0.2;
-            font-size: 24px;
-            bottom: 5px;
-            right: 5px;
-        }
         .board-container {
             background-color: #2a3142;
             border-radius: 12px;
@@ -152,7 +145,14 @@
         <div class="container mx-auto px-4 py-8 max-w-4xl">
             <h1 class="text-4xl font-bold text-center mb-8 text-yellow-400">Juego de Palabras Clave</h1>
             <div class="bg-gray-800 rounded-lg p-6 shadow-lg">
-                <h2 class="text-2xl font-bold mb-6">Seleccionar un Tablero</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Seleccionar un Tablero</h2>
+                    <button id="settingsBtn" class="text-gray-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M11.983 1.35a1 1 0 00-1.966 0l-.264 1.383a7.032 7.032 0 00-1.658.96l-1.26-.524a1 1 0 00-1.267.516l-.932 1.864a1 1 0 00.342 1.263l1.065.77a7.042 7.042 0 000 1.922l-1.065.77a1 1 0 00-.342 1.263l.932 1.864a1 1 0 001.267.516l1.26-.524c.5.39 1.047.716 1.658.96l.264 1.383a1 1 0 001.966 0l.264-1.383a7.032 7.032 0 001.658-.96l1.26.524a1 1 0 001.267-.516l.932-1.864a1 1 0 00-.342-1.263l-1.065-.77a7.042 7.042 0 000-1.922l1.065-.77a1 1 0 00.342-1.263l-.932-1.864a1 1 0 00-1.267-.516l-1.26.524a7.032 7.032 0 00-1.658-.96l-.264-1.383zM10 13a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     <!-- Preset cards -->
@@ -174,6 +174,58 @@
                     <button id="startGameBtn" class="btn bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 rounded-lg">
                         Comenzar Juego
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal fixed inset-0 flex items-center justify-center hidden" style="z-index:70;">
+        <div class="modal-overlay absolute inset-0 bg-black opacity-75"></div>
+        <div class="modal-content relative z-10 p-6 max-w-4xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Ajustes del Juego</h2>
+                <button id="closeSettingsBtn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-bold mb-3">Configuración del Tablero</h3>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Fondo del Tablero</label>
+                        <input type="file" id="boardBgUpload" accept="image/*" class="w-full">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Fondo de las Cartas</label>
+                        <input type="file" id="cardBgUpload" accept="image/*" class="w-full">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Tipo de Letra</label>
+                        <select id="fontSelect" class="w-full px-3 py-2 bg-gray-700 rounded">
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Oswald', sans-serif">Oswald</option>
+                            <option value="'Arial', sans-serif">Arial</option>
+                            <option value="'Courier New', monospace">Courier New</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-bold mb-3">Guardar/Cargar</h3>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Nombre del Preset</label>
+                        <input type="text" id="presetName" placeholder="Mi Tablero Personalizado" class="w-full px-3 py-2 bg-gray-700 rounded">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button id="savePresetBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Guardar Preset</button>
+                        <button id="loadWordsBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Cargar Palabras</button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button id="deletePresetBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Eliminar Preset</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -219,14 +271,43 @@
         </div>
 
         <!-- Team Score Tracking -->
-        <div class="flex justify-between mb-6">
+        <div class="flex justify-between items-center mb-6">
             <div class="team-label bg-red-800 text-white px-4 py-2 rounded-lg flex items-center">
                 <span id="redTeamLabel" class="font-bold mr-2">EQUIPO ROJO:</span>
-                <span id="redCardsLeft" class="text-xl">9</span> cartas restantes
+                <div class="flex flex-col items-center">
+                    <span id="redCardsLeft" class="text-xl">9</span>
+                    <span class="text-xs">cartas restantes</span>
+                </div>
+            </div>
+            <div class="flex flex-col items-center">
+                <div id="timerDisplay" class="text-yellow-400 text-3xl font-bold">60</div>
+                <div class="flex space-x-2 mt-1">
+                    <button id="startTimer" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-2 rounded">
+                        <span class="sr-only">Play</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6 4l10 6-10 6V4z" />
+                        </svg>
+                    </button>
+                    <button id="pauseTimer" class="btn bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">
+                        <span class="sr-only">Pause</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6 4h2v12H6V4zm6 0h2v12h-2V4z" />
+                        </svg>
+                    </button>
+                    <button id="resetTimer" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+                        <span class="sr-only">Restart</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4v5h.582l.157-.471A6 6 0 1110 16v2a8 8 0 10-7.75-5.75L1 10H4z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="team-label bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center">
                 <span id="blueTeamLabel" class="font-bold mr-2">EQUIPO AZUL:</span>
-                <span id="blueCardsLeft" class="text-xl">8</span> cartas restantes
+                <div class="flex flex-col items-center">
+                    <span id="blueCardsLeft" class="text-xl">8</span>
+                    <span class="text-xs">cartas restantes</span>
+                </div>
             </div>
         </div>
 
@@ -261,29 +342,7 @@
                 </button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Board Settings -->
-                <div class="bg-gray-800 p-4 rounded-lg">
-                    <h3 class="font-bold mb-3">Configuración del Tablero</h3>
-                    <div class="mb-3">
-                        <label class="block text-sm mb-1">Fondo del Tablero</label>
-                        <input type="file" id="boardBgUpload" accept="image/*" class="w-full">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-sm mb-1">Fondo de las Cartas</label>
-                        <input type="file" id="cardBgUpload" accept="image/*" class="w-full">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-sm mb-1">Tipo de Letra</label>
-                        <select id="fontSelect" class="w-full px-3 py-2 bg-gray-700 rounded">
-                            <option value="'Roboto', sans-serif">Roboto</option>
-                            <option value="'Oswald', sans-serif">Oswald</option>
-                            <option value="'Arial', sans-serif">Arial</option>
-                            <option value="'Courier New', monospace">Courier New</option>
-                        </select>
-                    </div>
-                </div>
-                
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Team Settings -->
                 <div class="bg-gray-800 p-4 rounded-lg">
                     <h3 class="font-bold mb-3">Configuración de Equipos</h3>
@@ -316,27 +375,6 @@
                     </div>
                 </div>
                 
-                <!-- Save/Load -->
-                <div class="bg-gray-800 p-4 rounded-lg">
-                    <h3 class="font-bold mb-3">Guardar/Cargar</h3>
-                    <div class="mb-3">
-                        <label class="block text-sm mb-1">Nombre del Preset</label>
-                        <input type="text" id="presetName" placeholder="Mi Tablero Personalizado" class="w-full px-3 py-2 bg-gray-700 rounded">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-3">
-                        <button id="savePresetBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                            Guardar Preset
-                        </button>
-                        <button id="loadWordsBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                            Cargar Palabras
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 gap-2">
-                        <button id="deletePresetBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                            Eliminar Preset
-                        </button>
-                    </div>
-                </div>
             </div>
             
             <div class="mt-4">
@@ -363,7 +401,7 @@
     <!-- Show Board Modal -->
     <div id="showBoardModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
         <div class="modal-overlay absolute inset-0 bg-black opacity-75"></div>
-        <div class="modal-content p-6 max-w-4xl w-full mx-4">
+        <div class="modal-content relative z-10 p-6 max-w-4xl w-full mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Vista del Espía</h2>
                 <button id="closeModalBtn" class="text-gray-400 hover:text-white">
@@ -391,7 +429,7 @@
     <!-- Edit Preset Modal -->
     <div id="editPresetModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
         <div class="modal-overlay absolute inset-0 bg-black opacity-75"></div>
-        <div class="modal-content p-6 max-w-4xl w-full mx-4">
+        <div class="modal-content relative z-10 p-6 max-w-4xl w-full mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Editar Preset</h2>
                 <button id="closeEditPresetModalBtn" class="text-gray-400 hover:text-white">
@@ -454,8 +492,7 @@
                         'TOY STORY', 'REY LEÓN', 'VENGADORES', 'PRINCESA', 'PIRATA'
                     ]
                 }
-            },
-            icons: ['🔍', '🎯', '💼', '🔐', '📡', '🔒', '📊', '🔑', '📱', '🌐']
+            }
         };
 
         // DOM Elements
@@ -466,9 +503,12 @@
         const editModeBtn = document.getElementById('editModeBtn');
         const closeEditBtn = document.getElementById('closeEditBtn');
         const showBoardBtn = document.getElementById('showBoardBtn');
-        const showBoardModal = document.getElementById('showBoardModal');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const closeSpymasterViewBtn = document.getElementById('closeSpymasterViewBtn');
+       const showBoardModal = document.getElementById('showBoardModal');
+       const closeModalBtn = document.getElementById('closeModalBtn');
+       const closeSpymasterViewBtn = document.getElementById('closeSpymasterViewBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
         const spymasterBoard = document.getElementById('spymasterBoard');
         const redCardsLeft = document.getElementById('redCardsLeft');
         const blueCardsLeft = document.getElementById('blueCardsLeft');
@@ -507,6 +547,10 @@
         const cancelEditPresetBtn = document.getElementById('cancelEditPresetBtn');
         const saveEditPresetBtn = document.getElementById('saveEditPresetBtn');
         const deletePresetBtn = document.getElementById('deletePresetBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startTimerBtn = document.getElementById('startTimer');
+        const pauseTimerBtn = document.getElementById('pauseTimer');
+        const resetTimerBtn = document.getElementById('resetTimer');
 
         // Initialize the game
         function initGame() {
@@ -568,15 +612,13 @@
             for (let i = 0; i < 25; i++) {
                 const word = words[i];
                 const type = cardTypes[i];
-                const icon = gameState.icons[Math.floor(Math.random() * gameState.icons.length)];
-                
+
                 // Create card object
                 const card = {
                     id: i,
                     word: word,
                     type: type,
-                    revealed: false,
-                    icon: icon
+                    revealed: false
                 };
                 
                 gameState.cards.push(card);
@@ -589,11 +631,9 @@
                     <div class="card-inner">
                         <div class="card-front">
                             <span class="word text-center px-2 font-bold text-white">${word}</span>
-                            <span class="icon">${icon}</span>
                         </div>
                         <div class="card-back ${type}">
                             <span class="word text-center px-2 font-bold text-white">${word}</span>
-                            <span class="icon">${icon}</span>
                         </div>
                     </div>
                 `;
@@ -604,7 +644,6 @@
                 spyCardElement.className = `card-back ${type} rounded-lg h-20 flex items-center justify-center relative`;
                 spyCardElement.innerHTML = `
                     <span class="word text-center px-2 font-bold text-white">${word}</span>
-                    <span class="icon">${icon}</span>
                 `;
                 spymasterBoard.appendChild(spyCardElement);
             }
@@ -660,6 +699,13 @@
                 rebuildSpymasterView();
                 showBoardModal.classList.remove('hidden');
             });
+
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+            });
+            closeSettingsBtn.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+            });
             
             // Close modal when clicking overlay
             document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -700,7 +746,9 @@
             });
             
             // New game buttons
-            newGameBtn.addEventListener('click', resetGame);
+            newGameBtn.addEventListener('click', () => {
+                resetGame();
+            });
             
             // Back to menu button
             document.getElementById('backToMenuBtn').addEventListener('click', () => {
@@ -737,7 +785,7 @@
                     document.getElementById('victoryButtons').classList.remove('hidden');
                     
                     // Show confirmation message
-                    showSnackbar('¡Juego iniciado! Selecciona cartas para jugar.');
+                    showSnackbar('¡Juego iniciado!');
                 } else {
                     // Default to 'default' preset if none selected
                     loadPreset('default');
@@ -769,6 +817,11 @@
             savePresetBtn.addEventListener('click', savePreset);
             loadWordsBtn.addEventListener('click', loadWords);
             deletePresetBtn.addEventListener('click', deletePreset);
+
+            // Timer controls
+            startTimerBtn.addEventListener('click', startTimer);
+            pauseTimerBtn.addEventListener('click', pauseTimer);
+            resetTimerBtn.addEventListener('click', resetTimer);
             
             // Team settings
             firstTeamSelect.addEventListener('change', updateTeamSettings);
@@ -939,6 +992,7 @@
             gameState.blueCardsLeft = gameState.blueCardsTotal;
             gameState.gameOver = false;
             gameState.currentTeam = 'red';
+            resetTimer();
             
             // Create new cards
             createCards();
@@ -989,6 +1043,41 @@
         function resetBoard() {
             resetGame();
             showSnackbar('Tablero reiniciado con éxito');
+        }
+
+        // ----- Timer Functions -----
+        const TIMER_START = 60;
+        let timer = TIMER_START;
+        let timerInterval = null;
+
+        function updateTimer() {
+            timerDisplay.textContent = timer;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                if (timer > 0) {
+                    timer--;
+                    updateTimer();
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timer = TIMER_START;
+            updateTimer();
         }
 
         // Save current board as preset
@@ -1344,7 +1433,6 @@
                 spyCardElement.className = `card-back ${card.type} rounded-lg h-20 flex items-center justify-center relative`;
                 spyCardElement.innerHTML = `
                     <span class="word text-center px-2 font-bold text-white">${card.word}</span>
-                    <span class="icon">${card.icon}</span>
                 `;
                 
                 // Add revealed indicator if card has been revealed
@@ -1415,10 +1503,9 @@
                 spyCardElement.style.color = textColor;
                 spyCardElement.className = `rounded-lg h-20 flex items-center justify-center relative`;
                 
-                // Add word and icon
+                // Add word only
                 spyCardElement.innerHTML = `
                     <span class="word text-center px-2 font-bold text-white">${card.word}</span>
-                    <span class="icon" style="position: absolute; opacity: 0.2; font-size: 24px; bottom: 5px; right: 5px;">${card.icon}</span>
                 `;
                 
                 // Add revealed indicator if card has been revealed
@@ -1585,6 +1672,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             initGame();
             updateTeamNames();
+            updateTimer();
         });
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'961371c311861eb4',t:'MTc1Mjg1NzA3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
