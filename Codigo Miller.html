@@ -219,15 +219,21 @@
         </div>
 
         <!-- Team Score Tracking -->
-        <div class="flex justify-between mb-6">
+        <div class="flex justify-between items-center mb-6">
             <div class="team-label bg-red-800 text-white px-4 py-2 rounded-lg flex items-center">
                 <span id="redTeamLabel" class="font-bold mr-2">EQUIPO ROJO:</span>
                 <span id="redCardsLeft" class="text-xl">9</span> cartas restantes
             </div>
+            <div id="timerDisplay" class="text-yellow-400 text-3xl font-bold">60</div>
             <div class="team-label bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center">
                 <span id="blueTeamLabel" class="font-bold mr-2">EQUIPO AZUL:</span>
                 <span id="blueCardsLeft" class="text-xl">8</span> cartas restantes
             </div>
+        </div>
+        <div class="flex justify-center space-x-4 mb-6">
+            <button id="startTimer" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded">Empezar</button>
+            <button id="pauseTimer" class="btn bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1 px-3 rounded">Pausar</button>
+            <button id="resetTimer" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded">Reiniciar</button>
         </div>
 
         <!-- Clue Input Area -->
@@ -507,6 +513,10 @@
         const cancelEditPresetBtn = document.getElementById('cancelEditPresetBtn');
         const saveEditPresetBtn = document.getElementById('saveEditPresetBtn');
         const deletePresetBtn = document.getElementById('deletePresetBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startTimerBtn = document.getElementById('startTimer');
+        const pauseTimerBtn = document.getElementById('pauseTimer');
+        const resetTimerBtn = document.getElementById('resetTimer');
 
         // Initialize the game
         function initGame() {
@@ -700,7 +710,10 @@
             });
             
             // New game buttons
-            newGameBtn.addEventListener('click', resetGame);
+            newGameBtn.addEventListener('click', () => {
+                resetGame();
+                startTimer();
+            });
             
             // Back to menu button
             document.getElementById('backToMenuBtn').addEventListener('click', () => {
@@ -728,6 +741,7 @@
                     
                     // Reset and initialize the game with the selected preset
                     resetGame();
+                    startTimer();
                     
                     // Hide select screen and show game
                     selectBoardScreen.classList.add('hidden');
@@ -744,6 +758,7 @@
                     
                     // Reset and initialize the game with the default preset
                     resetGame();
+                    startTimer();
                     
                     // Hide select screen and show game
                     selectBoardScreen.classList.add('hidden');
@@ -769,6 +784,11 @@
             savePresetBtn.addEventListener('click', savePreset);
             loadWordsBtn.addEventListener('click', loadWords);
             deletePresetBtn.addEventListener('click', deletePreset);
+
+            // Timer controls
+            startTimerBtn.addEventListener('click', startTimer);
+            pauseTimerBtn.addEventListener('click', pauseTimer);
+            resetTimerBtn.addEventListener('click', resetTimer);
             
             // Team settings
             firstTeamSelect.addEventListener('change', updateTeamSettings);
@@ -939,6 +959,7 @@
             gameState.blueCardsLeft = gameState.blueCardsTotal;
             gameState.gameOver = false;
             gameState.currentTeam = 'red';
+            resetTimer();
             
             // Create new cards
             createCards();
@@ -989,6 +1010,41 @@
         function resetBoard() {
             resetGame();
             showSnackbar('Tablero reiniciado con éxito');
+        }
+
+        // ----- Timer Functions -----
+        const TIMER_START = 60;
+        let timer = TIMER_START;
+        let timerInterval = null;
+
+        function updateTimer() {
+            timerDisplay.textContent = timer;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                if (timer > 0) {
+                    timer--;
+                    updateTimer();
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timer = TIMER_START;
+            updateTimer();
         }
 
         // Save current board as preset
@@ -1585,6 +1641,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             initGame();
             updateTeamNames();
+            updateTimer();
         });
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'961371c311861eb4',t:'MTc1Mjg1NzA3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
