@@ -180,7 +180,7 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settingsModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
+    <div id="settingsModal" class="modal fixed inset-0 flex items-center justify-center hidden" style="z-index:70;">
         <div class="modal-overlay absolute inset-0 bg-black opacity-75"></div>
         <div class="modal-content p-6 max-w-4xl w-full mx-4">
             <div class="flex justify-between items-center mb-4">
@@ -785,7 +785,7 @@
                     document.getElementById('victoryButtons').classList.remove('hidden');
                     
                     // Show confirmation message
-                    showSnackbar('¡Juego iniciado! Selecciona cartas para jugar.');
+                    showSnackbar('¡Juego iniciado!');
                 } else {
                     // Default to 'default' preset if none selected
                     loadPreset('default');
