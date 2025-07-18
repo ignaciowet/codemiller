@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Palabras Clave</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a2035;
+            color: #e0e0e0;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .card {
+            transition: all 0.3s ease;
+            perspective: 1000px;
+            height: 100px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-front {
+            background-color: #2d3748;
+            color: white;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        .card-back.red-team {
+            background-color: #c62828;
+            color: white;
+        }
+        .card-back.blue-team {
+            background-color: #1565c0;
+            color: white;
+        }
+        .card-back.neutral {
+            background-color: #4a5568;
+            color: white;
+        }
+        .card-back.assassin {
+            background-color: #212121;
+            color: white;
+        }
+        .icon {
+            position: absolute;
+            opacity: 0.2;
+            font-size: 24px;
+            bottom: 5px;
+            right: 5px;
+        }
+        .board-container {
+            background-color: #2a3142;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .team-label {
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 1px;
+        }
+        .btn {
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .modal {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .modal-content {
+            background-color: #2a3142;
+            border-radius: 12px;
+        }
+        .victory-screen {
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 50;
+        }
+        .clue-display {
+            background-color: #3a4156;
+            border-left: 4px solid #f9a825;
+        }
+        .select-board-screen {
+            background-color: #1a2035;
+            z-index: 60;
+        }
+        .preset-card {
+            background-color: #2a3142;
+            transition: all 0.3s ease;
+        }
+        .preset-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+    /* Snackbar styles */
+    .snackbar {
+        visibility: hidden;
+        min-width: 250px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 8px;
+        padding: 16px;
+        position: fixed;
+        z-index: 100;
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .snackbar.show {
+        visibility: visible;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+    @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+    }
+    @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+    }
+    </style>
+</head>
+<body>
+    <!-- Snackbar for notifications -->
+    <div id="snackbar" class="snackbar">Acción completada con éxito</div>
+    
+    <!-- Select Board Screen -->
+    <div id="selectBoardScreen" class="select-board-screen fixed inset-0 flex items-center justify-center">
+        <div class="container mx-auto px-4 py-8 max-w-4xl">
+            <h1 class="text-4xl font-bold text-center mb-8 text-yellow-400">Juego de Palabras Clave</h1>
+            <div class="bg-gray-800 rounded-lg p-6 shadow-lg">
+                <h2 class="text-2xl font-bold mb-6">Seleccionar un Tablero</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    <!-- Preset cards -->
+                    <div class="preset-card rounded-lg p-4 cursor-pointer border border-gray-700 border-yellow-500 border-2" data-preset="default">
+                        <h3 class="font-bold text-lg mb-2">Tablero Predeterminado</h3>
+                        <p class="text-sm text-gray-400">Juego estándar con palabras comunes</p>
+                    </div>
+                    <div class="preset-card rounded-lg p-4 cursor-pointer border border-gray-700" data-preset="movies">
+                        <h3 class="font-bold text-lg mb-2">Títulos de Películas</h3>
+                        <p class="text-sm text-gray-400">Títulos y personajes de películas famosas</p>
+                    </div>
+                    <div class="preset-card rounded-lg p-4 cursor-pointer border border-gray-700" data-preset="custom">
+                        <h3 class="font-bold text-lg mb-2">Crear Nuevo</h3>
+                        <p class="text-sm text-gray-400">Comenzar con un tablero en blanco</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center">
+                    <button id="startGameBtn" class="btn bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 rounded-lg">
+                        Comenzar Juego
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="gameContainer" class="container mx-auto px-4 py-8 max-w-6xl hidden">
+        <!-- Top Bar with Controls -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold mb-4 md:mb-0">Juego de Palabras Clave</h1>
+            
+            <div class="flex flex-wrap gap-2">
+                <button id="backToMenuBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                    Volver al Menú
+                </button>
+                <button id="editModeBtn" class="btn bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded">
+                    Modo Edición
+                </button>
+                <button id="showBoardBtn" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                    Mostrar Tablero
+                </button>
+                <button id="newGameBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    Nuevo Juego
+                </button>
+            </div>
+        </div>
+
+        <!-- Clue Display Area -->
+        <div id="clueDisplay" class="clue-display mb-6 p-4 rounded-lg hidden">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-yellow-400 font-bold">Pista Actual:</span>
+                    <span id="clueWord" class="text-xl font-bold ml-2">Océano</span>
+                    <span class="mx-2">-</span>
+                    <span id="clueNumber" class="text-xl font-bold">2</span>
+                </div>
+                <button id="dismissClueBtn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Team Score Tracking -->
+        <div class="flex justify-between mb-6">
+            <div class="team-label bg-red-800 text-white px-4 py-2 rounded-lg flex items-center">
+                <span id="redTeamLabel" class="font-bold mr-2">EQUIPO ROJO:</span>
+                <span id="redCardsLeft" class="text-xl">9</span> cartas restantes
+            </div>
+            <div class="team-label bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center">
+                <span id="blueTeamLabel" class="font-bold mr-2">EQUIPO AZUL:</span>
+                <span id="blueCardsLeft" class="text-xl">8</span> cartas restantes
+            </div>
+        </div>
+
+        <!-- Clue Input Area -->
+        <div class="mb-6 bg-gray-800 p-4 rounded-lg">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="clueWordInput" placeholder="Ingresa palabra pista" class="flex-grow px-4 py-2 rounded bg-gray-700 text-white">
+                <input type="number" id="clueNumberInput" placeholder="Número" min="0" max="9" class="w-24 px-4 py-2 rounded bg-gray-700 text-white">
+                <button id="submitClueBtn" class="btn bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded">
+                    Enviar Pista
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Board -->
+        <div class="board-container p-4 md:p-6">
+            <div id="gameBoard" class="grid grid-cols-5 gap-3">
+                <!-- Cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Mode Panel -->
+    <div id="editPanel" class="fixed bottom-0 left-0 right-0 bg-gray-900 p-4 transform translate-y-full transition-transform duration-300 ease-in-out">
+        <div class="container mx-auto max-w-6xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Modo Edición</h2>
+                <button id="closeEditBtn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Board Settings -->
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-bold mb-3">Configuración del Tablero</h3>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Fondo del Tablero</label>
+                        <input type="file" id="boardBgUpload" accept="image/*" class="w-full">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Fondo de las Cartas</label>
+                        <input type="file" id="cardBgUpload" accept="image/*" class="w-full">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Tipo de Letra</label>
+                        <select id="fontSelect" class="w-full px-3 py-2 bg-gray-700 rounded">
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Oswald', sans-serif">Oswald</option>
+                            <option value="'Arial', sans-serif">Arial</option>
+                            <option value="'Courier New', monospace">Courier New</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Team Settings -->
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-bold mb-3">Configuración de Equipos</h3>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Primer Equipo</label>
+                        <select id="firstTeamSelect" class="w-full px-3 py-2 bg-gray-700 rounded">
+                            <option value="red">Equipo Rojo (9 cartas)</option>
+                            <option value="blue">Equipo Azul (9 cartas)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-sm mb-1">Cartas Rojas</label>
+                            <input type="number" id="redCardCount" value="9" min="1" max="12" class="w-full px-3 py-2 bg-gray-700 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">Cartas Azules</label>
+                            <input type="number" id="blueCardCount" value="8" min="1" max="12" class="w-full px-3 py-2 bg-gray-700 rounded">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm mb-1">Nombre Equipo Rojo</label>
+                            <input type="text" id="redTeamName" value="EQUIPO ROJO" class="w-full px-3 py-2 bg-gray-700 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">Nombre Equipo Azul</label>
+                            <input type="text" id="blueTeamName" value="EQUIPO AZUL" class="w-full px-3 py-2 bg-gray-700 rounded">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Save/Load -->
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-bold mb-3">Guardar/Cargar</h3>
+                    <div class="mb-3">
+                        <label class="block text-sm mb-1">Nombre del Preset</label>
+                        <input type="text" id="presetName" placeholder="Mi Tablero Personalizado" class="w-full px-3 py-2 bg-gray-700 rounded">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button id="savePresetBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            Guardar Preset
+                        </button>
+                        <button id="loadWordsBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Cargar Palabras
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button id="deletePresetBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                            Eliminar Preset
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button id="randomizeBtn" class="btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded mr-2">
+                    Aleatorizar Cartas
+                </button>
+                <button id="resetBoardBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    Reiniciar Tablero
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory buttons -->
+    <div id="victoryButtons" class="fixed bottom-4 right-4 flex flex-col gap-2 z-40 hidden">
+        <button id="redWinBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">
+            <span id="redWinBtnLabel">Equipo Rojo Gana</span>
+        </button>
+        <button id="blueWinBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+            <span id="blueWinBtnLabel">Equipo Azul Gana</span>
+        </button>
+    </div>
+
+    <!-- Show Board Modal -->
+    <div id="showBoardModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
+        <div class="modal-overlay absolute inset-0 bg-black opacity-75"></div>
+        <div class="modal-content p-6 max-w-4xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Vista del Espía</h2>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <div id="spymasterBoard" class="grid grid-cols-5 gap-3">
+                    <!-- Spymaster view will be generated here -->
+                </div>
+            </div>
+            <div class="mt-4 text-center">
+                <p class="text-sm text-gray-400 mb-2">Toma una captura de pantalla de esta vista antes de cerrar</p>
+                <div class="flex justify-center space-x-4">
+                    <button id="closeSpymasterViewBtn" class="btn bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-6 rounded">
+                        Cerrar Vista de Espía
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Preset Modal -->
+    <div id="editPresetModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
+        <div class="modal-overlay absolute inset-0 bg-black opacity-75"></div>
+        <div class="modal-content p-6 max-w-4xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Editar Preset</h2>
+                <button id="closeEditPresetModalBtn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <div class="mb-4">
+                    <label class="block text-sm mb-1">Nombre del Preset</label>
+                    <input type="text" id="editPresetNameInput" class="w-full px-3 py-2 bg-gray-700 rounded mb-4">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm mb-1">Palabras (una por línea)</label>
+                    <textarea id="editPresetWordsInput" class="w-full px-3 py-2 bg-gray-700 rounded h-64 font-mono"></textarea>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end space-x-4">
+                <button id="cancelEditPresetBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded">
+                    Cancelar
+                </button>
+                <button id="saveEditPresetBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            cards: [],
+            redCardsTotal: 9,
+            blueCardsTotal: 8,
+            redCardsLeft: 9,
+            blueCardsLeft: 8,
+            neutralCardsTotal: 7,
+            assassinCardTotal: 1,
+            editMode: false,
+            currentTeam: 'red',
+            gameOver: false,
+            currentEditingPresetId: null,
+            presets: {
+                default: {
+                    words: [
+                        'AGENTE', 'ESPÍA', 'MISIÓN', 'CÓDIGO', 'SECRETO',
+                        'CAMPO', 'CUBIERTA', 'OPERACIÓN', 'SOMBRA', 'INTEL',
+                        'SEGURO', 'CASA', 'CONTACTO', 'ACTIVO', 'MANEJADOR',
+                        'DISPOSITIVO', 'RADIO', 'CIFRADO', 'DOCUMENTO', 'EMBAJADA',
+                        'DIPLOMÁTICO', 'AGENCIA', 'RED', 'PROTOCOLO', 'BRECHA'
+                    ]
+                },
+                movies: {
+                    words: [
+                        'STAR WARS', 'MATRIX', 'AVATAR', 'TITANIC', 'TIBURÓN',
+                        'FROZEN', 'JOKER', 'ORIGEN', 'ALIEN', 'TERMINATOR',
+                        'PADRINO', 'JURASSIC', 'MARVEL', 'BATMAN', 'HARRY POTTER',
+                        'BOND', 'MISIÓN', 'IMPOSIBLE', 'SHREK', 'BUSCANDO A NEMO',
+                        'TOY STORY', 'REY LEÓN', 'VENGADORES', 'PRINCESA', 'PIRATA'
+                    ]
+                }
+            },
+            icons: ['🔍', '🎯', '💼', '🔐', '📡', '🔒', '📊', '🔑', '📱', '🌐']
+        };
+
+        // DOM Elements
+        const selectBoardScreen = document.getElementById('selectBoardScreen');
+        const gameContainer = document.getElementById('gameContainer');
+        const gameBoard = document.getElementById('gameBoard');
+        const editPanel = document.getElementById('editPanel');
+        const editModeBtn = document.getElementById('editModeBtn');
+        const closeEditBtn = document.getElementById('closeEditBtn');
+        const showBoardBtn = document.getElementById('showBoardBtn');
+        const showBoardModal = document.getElementById('showBoardModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeSpymasterViewBtn = document.getElementById('closeSpymasterViewBtn');
+        const spymasterBoard = document.getElementById('spymasterBoard');
+        const redCardsLeft = document.getElementById('redCardsLeft');
+        const blueCardsLeft = document.getElementById('blueCardsLeft');
+        const redTeamLabel = document.getElementById('redTeamLabel');
+        const blueTeamLabel = document.getElementById('blueTeamLabel');
+        const redWinBtn = document.getElementById('redWinBtn');
+        const blueWinBtn = document.getElementById('blueWinBtn');
+        const redWinBtnLabel = document.getElementById('redWinBtnLabel');
+        const blueWinBtnLabel = document.getElementById('blueWinBtnLabel');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const clueDisplay = document.getElementById('clueDisplay');
+        const clueWord = document.getElementById('clueWord');
+        const clueNumber = document.getElementById('clueNumber');
+        const clueWordInput = document.getElementById('clueWordInput');
+        const clueNumberInput = document.getElementById('clueNumberInput');
+        const submitClueBtn = document.getElementById('submitClueBtn');
+        const dismissClueBtn = document.getElementById('dismissClueBtn');
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        const resetBoardBtn = document.getElementById('resetBoardBtn');
+        const savePresetBtn = document.getElementById('savePresetBtn');
+        const loadWordsBtn = document.getElementById('loadWordsBtn');
+        const presetName = document.getElementById('presetName');
+        const firstTeamSelect = document.getElementById('firstTeamSelect');
+        const redCardCount = document.getElementById('redCardCount');
+        const blueCardCount = document.getElementById('blueCardCount');
+        const redTeamName = document.getElementById('redTeamName');
+        const blueTeamName = document.getElementById('blueTeamName');
+        const fontSelect = document.getElementById('fontSelect');
+        const boardBgUpload = document.getElementById('boardBgUpload');
+        const cardBgUpload = document.getElementById('cardBgUpload');
+        const editPresetModal = document.getElementById('editPresetModal');
+        const closeEditPresetModalBtn = document.getElementById('closeEditPresetModalBtn');
+        const editPresetNameInput = document.getElementById('editPresetNameInput');
+        const editPresetWordsInput = document.getElementById('editPresetWordsInput');
+        const cancelEditPresetBtn = document.getElementById('cancelEditPresetBtn');
+        const saveEditPresetBtn = document.getElementById('saveEditPresetBtn');
+        const deletePresetBtn = document.getElementById('deletePresetBtn');
+
+        // Initialize the game
+        function initGame() {
+            // Load saved presets from localStorage if available
+            try {
+                const savedPresets = localStorage.getItem('codeNamePresets');
+                if (savedPresets) {
+                    const parsedPresets = JSON.parse(savedPresets);
+                    // Merge with default presets, keeping defaults if there's a conflict
+                    gameState.presets = { ...parsedPresets, ...gameState.presets };
+                    
+                    // Add custom presets to selection screen
+                    for (const [presetId, preset] of Object.entries(gameState.presets)) {
+                        // Skip the built-in presets
+                        if (presetId === 'default' || presetId === 'movies') continue;
+                        
+                        // Add custom presets
+                        const displayName = preset.displayName || presetId.charAt(0).toUpperCase() + presetId.slice(1);
+                        addPresetToSelectionScreen(presetId, displayName);
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudieron cargar los presets desde localStorage', e);
+            }
+            
+            // Create cards
+            createCards();
+            
+            // Update team counts display
+            updateTeamCounts();
+            
+            // Add event listeners
+            setupEventListeners();
+        }
+
+        // Create the game cards
+        function createCards() {
+            gameBoard.innerHTML = '';
+            spymasterBoard.innerHTML = '';
+            
+            // Determine card types
+            const cardTypes = [];
+            for (let i = 0; i < gameState.redCardsTotal; i++) cardTypes.push('red-team');
+            for (let i = 0; i < gameState.blueCardsTotal; i++) cardTypes.push('blue-team');
+            for (let i = 0; i < gameState.neutralCardsTotal; i++) cardTypes.push('neutral');
+            for (let i = 0; i < gameState.assassinCardTotal; i++) cardTypes.push('assassin');
+            
+            // Shuffle card types
+            shuffleArray(cardTypes);
+            
+            // Create cards with words from current preset
+            const presetName = gameState.currentPreset || 'default';
+            const currentPreset = gameState.presets[presetName];
+            const words = [...currentPreset.words];
+            shuffleArray(words);
+            
+            gameState.cards = [];
+            
+            for (let i = 0; i < 25; i++) {
+                const word = words[i];
+                const type = cardTypes[i];
+                const icon = gameState.icons[Math.floor(Math.random() * gameState.icons.length)];
+                
+                // Create card object
+                const card = {
+                    id: i,
+                    word: word,
+                    type: type,
+                    revealed: false,
+                    icon: icon
+                };
+                
+                gameState.cards.push(card);
+                
+                // Create game board card
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.id = i;
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <span class="word text-center px-2 font-bold text-white">${word}</span>
+                            <span class="icon">${icon}</span>
+                        </div>
+                        <div class="card-back ${type}">
+                            <span class="word text-center px-2 font-bold text-white">${word}</span>
+                            <span class="icon">${icon}</span>
+                        </div>
+                    </div>
+                `;
+                gameBoard.appendChild(cardElement);
+                
+                // Create spymaster board card
+                const spyCardElement = document.createElement('div');
+                spyCardElement.className = `card-back ${type} rounded-lg h-20 flex items-center justify-center relative`;
+                spyCardElement.innerHTML = `
+                    <span class="word text-center px-2 font-bold text-white">${word}</span>
+                    <span class="icon">${icon}</span>
+                `;
+                spymasterBoard.appendChild(spyCardElement);
+            }
+        }
+
+        // Update team names in the UI
+        function updateTeamNames() {
+            const redName = redTeamName.value.trim() || "EQUIPO ROJO";
+            const blueName = blueTeamName.value.trim() || "EQUIPO AZUL";
+            
+            // Update team labels
+            redTeamLabel.textContent = redName + ":";
+            blueTeamLabel.textContent = blueName + ":";
+            
+            // Update win buttons
+            redWinBtnLabel.textContent = redName + " Gana";
+            blueWinBtnLabel.textContent = blueName + " Gana";
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Preset card selection
+            document.querySelectorAll('.preset-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Don't select if clicking the edit or delete button
+                    if (e.target.closest('.edit-preset-btn') || e.target.closest('.delete-preset-btn')) {
+                        return;
+                    }
+                    
+                    // Remove highlight from all cards
+                    document.querySelectorAll('.preset-card').forEach(c => {
+                        c.classList.remove('border-yellow-500', 'border-2');
+                    });
+                    
+                    // Highlight selected card
+                    this.classList.add('border-yellow-500', 'border-2');
+                    
+                    // Load the preset
+                    const presetName = this.dataset.preset;
+                    if (presetName) {
+                        loadPreset(presetName);
+                    }
+                });
+            });
+            
+            // Edit mode toggle
+            editModeBtn.addEventListener('click', toggleEditMode);
+            closeEditBtn.addEventListener('click', toggleEditMode);
+            
+            // Show board modal
+            showBoardBtn.addEventListener('click', () => {
+                // Completely rebuild the spymaster view to ensure it's correct
+                rebuildSpymasterView();
+                showBoardModal.classList.remove('hidden');
+            });
+            
+            // Close modal when clicking overlay
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', function(e) {
+                    // Find the parent modal
+                    const modal = this.closest('.modal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        if (modal.id === 'showBoardModal') {
+                            showSnackbar('Vista de espía cerrada');
+                        } else if (modal.id === 'editPresetModal') {
+                            gameState.currentEditingPresetId = null;
+                        }
+                    }
+                });
+            });
+            
+            closeModalBtn.addEventListener('click', function() {
+                showBoardModal.classList.add('hidden');
+                showSnackbar('Vista de espía cerrada');
+            });
+            
+            closeSpymasterViewBtn.addEventListener('click', function() {
+                showBoardModal.classList.add('hidden');
+                showSnackbar('Vista de espía cerrada');
+            });
+            
+            // Card click events
+            gameBoard.addEventListener('click', (e) => {
+                // Don't flip cards in edit mode
+                if (gameState.editMode) return;
+                
+                const card = e.target.closest('.card');
+                if (card && !gameState.gameOver) {
+                    const cardId = parseInt(card.dataset.id);
+                    revealCard(cardId);
+                }
+            });
+            
+            // New game buttons
+            newGameBtn.addEventListener('click', resetGame);
+            
+            // Back to menu button
+            document.getElementById('backToMenuBtn').addEventListener('click', () => {
+                gameContainer.classList.add('hidden');
+                document.getElementById('victoryButtons').classList.add('hidden');
+                selectBoardScreen.classList.remove('hidden');
+                // Update preset selection screen with any new presets
+                updatePresetSelectionScreen();
+            });
+            
+            // Start game button
+            startGameBtn.addEventListener('click', () => {
+                // Get the selected preset
+                const selectedPresetCard = document.querySelector('.preset-card.border-yellow-500');
+                if (selectedPresetCard) {
+                    const presetName = selectedPresetCard.dataset.preset;
+                    
+                    // If "custom" is selected, prompt for words
+                    if (presetName === 'custom') {
+                        promptForCustomWords();
+                        return; // Don't continue with game start until words are loaded
+                    }
+                    
+                    loadPreset(presetName);
+                    
+                    // Reset and initialize the game with the selected preset
+                    resetGame();
+                    
+                    // Hide select screen and show game
+                    selectBoardScreen.classList.add('hidden');
+                    gameContainer.classList.remove('hidden');
+                    
+                    // Make sure victory buttons are visible
+                    document.getElementById('victoryButtons').classList.remove('hidden');
+                    
+                    // Show confirmation message
+                    showSnackbar('¡Juego iniciado! Selecciona cartas para jugar.');
+                } else {
+                    // Default to 'default' preset if none selected
+                    loadPreset('default');
+                    
+                    // Reset and initialize the game with the default preset
+                    resetGame();
+                    
+                    // Hide select screen and show game
+                    selectBoardScreen.classList.add('hidden');
+                    gameContainer.classList.remove('hidden');
+                    
+                    // Make sure victory buttons are visible
+                    document.getElementById('victoryButtons').classList.remove('hidden');
+                    
+                    // Show confirmation message
+                    showSnackbar('¡Juego iniciado con tablero predeterminado!');
+                }
+            });
+            
+            // Clue submission
+            submitClueBtn.addEventListener('click', submitClue);
+            dismissClueBtn.addEventListener('click', () => {
+                clueDisplay.classList.add('hidden');
+            });
+            
+            // Edit panel buttons
+            randomizeBtn.addEventListener('click', randomizeCards);
+            resetBoardBtn.addEventListener('click', resetBoard);
+            savePresetBtn.addEventListener('click', savePreset);
+            loadWordsBtn.addEventListener('click', loadWords);
+            deletePresetBtn.addEventListener('click', deletePreset);
+            
+            // Team settings
+            firstTeamSelect.addEventListener('change', updateTeamSettings);
+            redCardCount.addEventListener('change', updateTeamSettings);
+            blueCardCount.addEventListener('change', updateTeamSettings);
+            redTeamName.addEventListener('input', updateTeamNames);
+            blueTeamName.addEventListener('input', updateTeamNames);
+            
+            // Victory buttons
+            redWinBtn.addEventListener('click', () => declareWinner('red'));
+            blueWinBtn.addEventListener('click', () => declareWinner('blue'));
+            
+            // Board styling
+            fontSelect.addEventListener('change', (e) => {
+                document.body.style.fontFamily = e.target.value;
+            });
+            
+            boardBgUpload.addEventListener('change', handleBoardBgUpload);
+            cardBgUpload.addEventListener('change', handleCardBgUpload);
+            
+            // Edit preset modal
+            closeEditPresetModalBtn.addEventListener('click', closeEditPresetModal);
+            cancelEditPresetBtn.addEventListener('click', closeEditPresetModal);
+            saveEditPresetBtn.addEventListener('click', saveEditedPreset);
+        }
+
+        // Toggle edit mode
+        function toggleEditMode() {
+            gameState.editMode = !gameState.editMode;
+            
+            if (gameState.editMode) {
+                editPanel.classList.remove('translate-y-full');
+                editModeBtn.textContent = 'Cerrar Modo Edición';
+                editModeBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                editModeBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+                
+                // Make cards editable
+                document.querySelectorAll('.card .word').forEach(word => {
+                    word.contentEditable = true;
+                    word.classList.add('border', 'border-dashed', 'border-yellow-400', 'p-1');
+                    
+                    // Prevent card flipping when editing text
+                    word.addEventListener('click', function(e) {
+                        if (gameState.editMode) {
+                            e.stopPropagation();
+                        }
+                    });
+                });
+            } else {
+                editPanel.classList.add('translate-y-full');
+                editModeBtn.textContent = 'Modo Edición';
+                editModeBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editModeBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                
+                // Make cards non-editable
+                document.querySelectorAll('.card .word').forEach(word => {
+                    word.contentEditable = false;
+                    word.classList.remove('border', 'border-dashed', 'border-yellow-400', 'p-1');
+                    
+                    // Update card data with edited text
+                    const cardElement = word.closest('.card');
+                    if (cardElement) {
+                        const cardId = parseInt(cardElement.dataset.id);
+                        const cardData = gameState.cards[cardId];
+                        if (cardData) {
+                            cardData.word = word.textContent.trim();
+                        }
+                    }
+                });
+                
+                // Update spymaster view with edited words
+                updateSpymasterView();
+            }
+        }
+
+        // Reveal a card
+        function revealCard(cardId) {
+            const card = gameState.cards[cardId];
+            const cardElement = document.querySelector(`.card[data-id="${cardId}"]`);
+            
+            if (card.revealed || gameState.gameOver) return;
+            
+            card.revealed = true;
+            cardElement.classList.add('flipped');
+            
+            // Update team counts
+            if (card.type === 'red-team') {
+                gameState.redCardsLeft--;
+                updateTeamCounts();
+                checkForWin('red');
+            } else if (card.type === 'blue-team') {
+                gameState.blueCardsLeft--;
+                updateTeamCounts();
+                checkForWin('blue');
+            } else if (card.type === 'assassin') {
+                // Notify that assassin was found
+                showSnackbar('¡Carta asesina revelada!');
+            }
+            
+            // Update spymaster view to reflect the revealed card
+            updateSpymasterViewForReveal(cardId);
+        }
+
+        // Update team counts display
+        function updateTeamCounts() {
+            redCardsLeft.textContent = gameState.redCardsLeft;
+            blueCardsLeft.textContent = gameState.blueCardsLeft;
+        }
+
+        // Check for win condition
+        function checkForWin(team) {
+            // Only notify if all cards of a team are found
+            if (team === 'red' && gameState.redCardsLeft === 0) {
+                showSnackbar(`¡Todas las cartas del ${redTeamName.value || "EQUIPO ROJO"} encontradas!`);
+                return true;
+            } else if (team === 'blue' && gameState.blueCardsLeft === 0) {
+                showSnackbar(`¡Todas las cartas del ${blueTeamName.value || "EQUIPO AZUL"} encontradas!`);
+                return true;
+            }
+            return false;
+        }
+
+        // Declare winner manually
+        function declareWinner(team) {
+            gameState.gameOver = true;
+            
+            const teamName = team === 'red' 
+                ? redTeamName.value.trim() || "EQUIPO ROJO" 
+                : blueTeamName.value.trim() || "EQUIPO AZUL";
+            
+            // Show notification
+            showSnackbar(`¡${teamName} GANA!`);
+            
+            // Reveal all cards
+            gameState.cards.forEach(card => {
+                if (!card.revealed) {
+                    const cardElement = document.querySelector(`.card[data-id="${card.id}"]`);
+                    if (cardElement) {
+                        card.revealed = true;
+                        cardElement.classList.add('flipped');
+                    }
+                }
+            });
+            
+            // Update spymaster view if open
+            if (!showBoardModal.classList.contains('hidden')) {
+                rebuildSpymasterView();
+            }
+        }
+
+        // Reset the game
+        function resetGame() {
+            // Make sure we're using the current preset
+            const currentPresetId = gameState.currentPreset || 'default';
+            
+            // Ensure the preset exists
+            if (!gameState.presets[currentPresetId]) {
+                gameState.currentPreset = 'default';
+                showSnackbar('Preset seleccionado no encontrado, usando el predeterminado');
+            }
+            
+            // Reset game state
+            gameState.redCardsLeft = gameState.redCardsTotal;
+            gameState.blueCardsLeft = gameState.blueCardsTotal;
+            gameState.gameOver = false;
+            gameState.currentTeam = 'red';
+            
+            // Create new cards
+            createCards();
+            updateTeamCounts();
+            
+            // Update team names
+            updateTeamNames();
+            
+            // Hide clue display
+            clueDisplay.classList.add('hidden');
+            
+            // Make sure victory buttons are visible
+            document.getElementById('victoryButtons').classList.remove('hidden');
+            
+            // Show notification
+            showSnackbar('Nuevo juego iniciado');
+        }
+
+        // Submit a clue
+        function submitClue() {
+            const word = clueWordInput.value.trim();
+            const number = clueNumberInput.value;
+            
+            if (word && number) {
+                clueWord.textContent = word;
+                clueNumber.textContent = number;
+                clueDisplay.classList.remove('hidden');
+                
+                // Clear inputs
+                clueWordInput.value = '';
+                clueNumberInput.value = '';
+                
+                // Show notification
+                showSnackbar(`Pista enviada: ${word} - ${number}`);
+            } else {
+                showSnackbar('Por favor ingresa una palabra y un número');
+            }
+        }
+
+        // Randomize card positions
+        function randomizeCards() {
+            shuffleArray(gameState.cards);
+            createCards();
+            showSnackbar('Cartas aleatorizadas con éxito');
+        }
+
+        // Reset the board
+        function resetBoard() {
+            resetGame();
+            showSnackbar('Tablero reiniciado con éxito');
+        }
+
+        // Save current board as preset
+        function savePreset() {
+            const name = presetName.value.trim() || 'Preset Personalizado';
+            const presetId = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString().slice(-6);
+            
+            // Collect all words from the board
+            const words = [];
+            document.querySelectorAll('.card .word').forEach(wordElement => {
+                // Get the text from the front of the card (visible to players)
+                if (wordElement.closest('.card-front')) {
+                    words.push(wordElement.textContent.trim());
+                }
+            });
+            
+            // Make sure we have enough words
+            if (words.length < 25) {
+                showSnackbar('Error: No se pudieron recopilar todas las palabras del tablero');
+                return;
+            }
+            
+            // Save preset
+            gameState.presets[presetId] = {
+                words: words,
+                displayName: name
+            };
+            
+            // Add the new preset to the selection screen
+            addPresetToSelectionScreen(presetId, name);
+            
+            // Set as current preset
+            gameState.currentPreset = presetId;
+            
+            // Show success notification
+            showSnackbar(`Preset "${name}" guardado con éxito!`);
+            
+            // Store in localStorage for persistence
+            try {
+                localStorage.setItem('codeNamePresets', JSON.stringify(gameState.presets));
+            } catch (e) {
+                console.warn('No se pudieron guardar los presets en localStorage', e);
+            }
+        }
+
+        // Add a preset to the selection screen
+        function addPresetToSelectionScreen(presetId, presetName) {
+            // Check if this preset already exists in the selection screen
+            const existingPreset = document.querySelector(`.preset-card[data-preset="${presetId}"]`);
+            if (existingPreset) {
+                return; // Already exists
+            }
+            
+            // Create a new preset card
+            const presetCard = document.createElement('div');
+            presetCard.className = 'preset-card rounded-lg p-4 cursor-pointer border border-gray-700';
+            presetCard.dataset.preset = presetId;
+            
+            // For custom presets (not built-in), add edit and delete buttons
+            const isBuiltIn = presetId === 'default' || presetId === 'movies' || presetId === 'custom';
+            
+            presetCard.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-lg mb-2">${presetName}</h3>
+                    ${!isBuiltIn ? `
+                    <div class="flex space-x-2">
+                        <button class="edit-preset-btn text-blue-500 hover:text-blue-700" data-preset-id="${presetId}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
+                        <button class="delete-preset-btn text-red-500 hover:text-red-700" data-preset-id="${presetId}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+                <p class="text-sm text-gray-400">${isBuiltIn ? (presetId === 'custom' ? 'Comenzar con un tablero en blanco' : 'Conjunto de palabras incorporado') : 'Conjunto de palabras personalizado'}</p>
+            `;
+            
+            // Add to the grid
+            const presetGrid = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3');
+            presetGrid.appendChild(presetCard);
+            
+            // Add click event for selecting the preset
+            presetCard.addEventListener('click', function(e) {
+                // Don't select if clicking the edit or delete button
+                if (e.target.closest('.edit-preset-btn') || e.target.closest('.delete-preset-btn')) {
+                    return;
+                }
+                
+                document.querySelectorAll('.preset-card').forEach(c => {
+                    c.classList.remove('border-yellow-500', 'border-2');
+                });
+                this.classList.add('border-yellow-500', 'border-2');
+                loadPreset(presetId);
+            });
+            
+            // Add edit button event listener
+            const editBtns = presetCard.querySelectorAll('.edit-preset-btn');
+            editBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent selecting the preset
+                    const presetIdToEdit = this.dataset.presetId;
+                    openEditPresetModal(presetIdToEdit);
+                });
+            });
+            
+            // Add delete button event listener
+            const deleteBtns = presetCard.querySelectorAll('.delete-preset-btn');
+            deleteBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent selecting the preset
+                    const presetIdToDelete = this.dataset.presetId;
+                    
+                    // Confirm deletion
+                    if (confirm(`¿Estás seguro de que quieres eliminar el preset "${gameState.presets[presetIdToDelete]?.displayName || presetIdToDelete}"?`)) {
+                        // Delete the preset
+                        delete gameState.presets[presetIdToDelete];
+                        
+                        // Remove the card from the UI
+                        const cardToRemove = document.querySelector(`.preset-card[data-preset="${presetIdToDelete}"]`);
+                        if (cardToRemove) {
+                            cardToRemove.remove();
+                        }
+                        
+                        // Update localStorage
+                        try {
+                            localStorage.setItem('codeNamePresets', JSON.stringify(gameState.presets));
+                        } catch (e) {
+                            console.warn('No se pudieron guardar los presets en localStorage', e);
+                        }
+                        
+                        // Show success notification
+                        showSnackbar('Preset eliminado con éxito');
+                    }
+                });
+            });
+        }
+        
+        // Delete the current preset
+        function deletePreset() {
+            // Get the current preset ID
+            const currentPresetId = gameState.currentPreset;
+            
+            // Don't allow deleting built-in presets
+            if (currentPresetId === 'default' || currentPresetId === 'movies') {
+                showSnackbar('No se pueden eliminar los presets incorporados');
+                return;
+            }
+            
+            // Confirm deletion
+            if (confirm(`¿Estás seguro de que quieres eliminar el preset "${gameState.presets[currentPresetId]?.displayName || currentPresetId}"?`)) {
+                // Delete the preset
+                delete gameState.presets[currentPresetId];
+                
+                // Switch to default preset
+                gameState.currentPreset = 'default';
+                
+                // Update localStorage
+                try {
+                    localStorage.setItem('codeNamePresets', JSON.stringify(gameState.presets));
+                } catch (e) {
+                    console.warn('No se pudieron guardar los presets en localStorage', e);
+                }
+                
+                // Show success notification
+                showSnackbar('Preset eliminado con éxito');
+                
+                // Reset the game with the default preset
+                resetGame();
+            }
+        }
+
+        // Update the preset selection screen with all available presets
+        function updatePresetSelectionScreen() {
+            // Get the preset grid
+            const presetGrid = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3');
+            
+            // Clear existing custom presets (keep default, movies, and custom)
+            const existingPresets = presetGrid.querySelectorAll('.preset-card:not([data-preset="default"]):not([data-preset="movies"]):not([data-preset="custom"])');
+            existingPresets.forEach(preset => preset.remove());
+            
+            // Add all presets from gameState
+            for (const [presetId, preset] of Object.entries(gameState.presets)) {
+                // Skip the built-in presets
+                if (presetId === 'default' || presetId === 'movies') continue;
+                
+                // Add custom presets with proper display name
+                const displayName = preset.displayName || presetId.charAt(0).toUpperCase() + presetId.slice(1);
+                addPresetToSelectionScreen(presetId, displayName);
+            }
+        }
+
+        // Prompt for custom words when "Crear Nuevo" is selected
+        function promptForCustomWords() {
+            const input = prompt('Ingresa palabras separadas por comas (mínimo 25 palabras):');
+            if (input) {
+                const words = input.split(',').map(word => word.trim().toUpperCase()).filter(word => word);
+                
+                if (words.length < 25) {
+                    alert('No hay suficientes palabras. Por favor ingresa al menos 25 palabras.');
+                    return;
+                }
+                
+                // Create a new preset name
+                const customName = 'Palabras Personalizadas';
+                const presetId = 'custom-' + Date.now().toString().slice(-6);
+                
+                // Save as a new preset
+                gameState.presets[presetId] = {
+                    words: words.slice(0, Math.max(25, words.length)),
+                    displayName: customName
+                };
+                
+                // Set as current preset
+                gameState.currentPreset = presetId;
+                
+                // Add to selection screen
+                addPresetToSelectionScreen(presetId, customName);
+                
+                // Reset and initialize the game with the new preset
+                resetGame();
+                
+                // Hide select screen and show game
+                selectBoardScreen.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+                
+                // Make sure victory buttons are visible
+                document.getElementById('victoryButtons').classList.remove('hidden');
+                
+                // Show success notification
+                showSnackbar(`¡Juego personalizado iniciado con ${words.length} palabras!`);
+                
+                // Store in localStorage for persistence
+                try {
+                    localStorage.setItem('codeNamePresets', JSON.stringify(gameState.presets));
+                } catch (e) {
+                    console.warn('No se pudieron guardar los presets en localStorage', e);
+                }
+            }
+        }
+
+        // Load words from a text input
+        function loadWords() {
+            const input = prompt('Ingresa palabras separadas por comas:');
+            if (input) {
+                const words = input.split(',').map(word => word.trim().toUpperCase()).filter(word => word);
+                
+                if (words.length < 25) {
+                    alert('No hay suficientes palabras. Por favor ingresa al menos 25 palabras.');
+                    return;
+                }
+                
+                // Create a new preset name
+                const customName = presetName.value.trim() || 'Palabras Personalizadas';
+                const presetId = customName.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString().slice(-6);
+                
+                // Save as a new preset
+                gameState.presets[presetId] = {
+                    words: words.slice(0, Math.max(25, words.length)),
+                    displayName: customName
+                };
+                
+                // Set as current preset
+                gameState.currentPreset = presetId;
+                
+                // Add to selection screen
+                addPresetToSelectionScreen(presetId, customName);
+                
+                // Recreate cards
+                createCards();
+                
+                // Show success notification
+                showSnackbar(`Palabras cargadas con éxito como preset "${customName}"!`);
+                
+                // Store in localStorage for persistence
+                try {
+                    localStorage.setItem('codeNamePresets', JSON.stringify(gameState.presets));
+                } catch (e) {
+                    console.warn('No se pudieron guardar los presets en localStorage', e);
+                }
+            }
+        }
+
+        // Update team settings
+        function updateTeamSettings() {
+            const firstTeam = firstTeamSelect.value;
+            const redCount = parseInt(redCardCount.value);
+            const blueCount = parseInt(blueCardCount.value);
+            
+            if (firstTeam === 'red') {
+                gameState.redCardsTotal = Math.max(redCount, blueCount);
+                gameState.blueCardsTotal = Math.min(redCount, blueCount);
+            } else {
+                gameState.blueCardsTotal = Math.max(redCount, blueCount);
+                gameState.redCardsTotal = Math.min(redCount, blueCount);
+            }
+            
+            gameState.redCardsLeft = gameState.redCardsTotal;
+            gameState.blueCardsLeft = gameState.blueCardsTotal;
+            
+            // Calculate neutral cards (total should be 25)
+            gameState.neutralCardsTotal = 25 - gameState.redCardsTotal - gameState.blueCardsTotal - gameState.assassinCardTotal;
+            
+            updateTeamCounts();
+        }
+
+        // Handle board background upload
+        function handleBoardBgUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // Set background for the entire website
+                    document.body.style.backgroundImage = `url(${event.target.result})`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundPosition = 'center';
+                    document.body.style.backgroundAttachment = 'fixed';
+                    
+                    // Show notification
+                    showSnackbar('Fondo del sitio actualizado');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Handle card background upload
+        function handleCardBgUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const cardFronts = document.querySelectorAll('.card-front');
+                    cardFronts.forEach(front => {
+                        front.style.backgroundImage = `url(${event.target.result})`;
+                        front.style.backgroundSize = 'cover';
+                        front.style.backgroundPosition = 'center';
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Update spymaster view with current card data
+        function updateSpymasterView() {
+            spymasterBoard.innerHTML = '';
+            
+            gameState.cards.forEach(card => {
+                const spyCardElement = document.createElement('div');
+                spyCardElement.className = `card-back ${card.type} rounded-lg h-20 flex items-center justify-center relative`;
+                spyCardElement.innerHTML = `
+                    <span class="word text-center px-2 font-bold text-white">${card.word}</span>
+                    <span class="icon">${card.icon}</span>
+                `;
+                
+                // Add revealed indicator if card has been revealed
+                if (card.revealed) {
+                    const revealedMark = document.createElement('div');
+                    revealedMark.className = 'absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center';
+                    revealedMark.innerHTML = '<span class="text-white text-xl">✓</span>';
+                    spyCardElement.appendChild(revealedMark);
+                }
+                
+                spymasterBoard.appendChild(spyCardElement);
+            });
+        }
+        
+        // Update spymaster view for a single revealed card
+        function updateSpymasterViewForReveal(cardId) {
+            // If spymaster view is currently open
+            if (!showBoardModal.classList.contains('hidden')) {
+                const card = gameState.cards[cardId];
+                const spyCardElements = spymasterBoard.children;
+                
+                if (spyCardElements[cardId]) {
+                    const revealedMark = document.createElement('div');
+                    revealedMark.className = 'absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center';
+                    revealedMark.innerHTML = '<span class="text-white text-xl">✓</span>';
+                    spyCardElements[cardId].appendChild(revealedMark);
+                }
+            }
+        }
+        
+        // Completely rebuild the spymaster view from scratch
+        function rebuildSpymasterView() {
+            // Clear the spymaster board
+            spymasterBoard.innerHTML = '';
+            
+            // Create a fresh view of all cards with their types
+            for (let i = 0; i < gameState.cards.length; i++) {
+                const card = gameState.cards[i];
+                
+                // Create spymaster card element with proper styling based on card type
+                const spyCardElement = document.createElement('div');
+                
+                // Set background color based on card type
+                let bgColor, textColor;
+                switch(card.type) {
+                    case 'red-team':
+                        bgColor = '#c62828';
+                        textColor = 'white';
+                        break;
+                    case 'blue-team':
+                        bgColor = '#1565c0';
+                        textColor = 'white';
+                        break;
+                    case 'neutral':
+                        bgColor = '#4a5568';
+                        textColor = 'white';
+                        break;
+                    case 'assassin':
+                        bgColor = '#212121';
+                        textColor = 'white';
+                        break;
+                    default:
+                        bgColor = '#757575'; // Default gray
+                        textColor = 'white';
+                }
+                
+                spyCardElement.style.backgroundColor = bgColor;
+                spyCardElement.style.color = textColor;
+                spyCardElement.className = `rounded-lg h-20 flex items-center justify-center relative`;
+                
+                // Add word and icon
+                spyCardElement.innerHTML = `
+                    <span class="word text-center px-2 font-bold text-white">${card.word}</span>
+                    <span class="icon" style="position: absolute; opacity: 0.2; font-size: 24px; bottom: 5px; right: 5px;">${card.icon}</span>
+                `;
+                
+                // Add revealed indicator if card has been revealed
+                if (card.revealed) {
+                    const revealedMark = document.createElement('div');
+                    revealedMark.className = 'absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center';
+                    revealedMark.innerHTML = '<span class="text-white text-xl">✓</span>';
+                    spyCardElement.appendChild(revealedMark);
+                }
+                
+                // Add to spymaster board
+                spymasterBoard.appendChild(spyCardElement);
+            }
+            
+            // Show a notification that spymaster view is active
+            showSnackbar('Vista de espía activa - muestra todos los colores de las cartas');
+        }
+
+        // Load a preset
+        function loadPreset(presetName) {
+            if (gameState.presets[presetName]) {
+                // Set current preset
+                gameState.currentPreset = presetName;
+                
+                // Update team settings based on preset
+                if (presetName === 'default' || presetName === 'movies') {
+                    gameState.redCardsTotal = 9;
+                    gameState.blueCardsTotal = 8;
+                    gameState.neutralCardsTotal = 7;
+                    gameState.assassinCardTotal = 1;
+                }
+                
+                gameState.redCardsLeft = gameState.redCardsTotal;
+                gameState.blueCardsLeft = gameState.blueCardsTotal;
+            } else if (presetName === 'custom') {
+                // For custom preset, just use default words but allow editing
+                gameState.currentPreset = 'default';
+            }
+        }
+
+        // Open the edit preset modal
+        function openEditPresetModal(presetId) {
+            // Don't allow editing built-in presets
+            if (presetId === 'default' || presetId === 'movies') {
+                showSnackbar('No se pueden editar los presets incorporados');
+                return;
+            }
+            
+            // Make sure the preset exists
+            if (!gameState.presets[presetId]) {
+                showSnackbar('Preset no encontrado');
+                return;
+            }
+            
+            // Store the preset ID being edited
+            gameState.currentEditingPresetId = presetId;
+            
+            // Load preset data into the form
+            const preset = gameState.presets[presetId];
+            editPresetNameInput.value = preset.displayName || presetId;
+            editPresetWordsInput.value = preset.words.join('\n');
+            
+            // Show the modal
+            editPresetModal.classList.remove('hidden');
+        }
+        
+        // Close the edit preset modal
+        function closeEditPresetModal() {
+            editPresetModal.classList.add('hidden');
+            gameState.currentEditingPresetId = null;
+        }
+        
+        // Save the edited preset
+        function saveEditedPreset() {
+            const presetId = gameState.currentEditingPresetId;
+            if (!presetId || !gameState.presets[presetId]) {
+                showSnackbar('Error: No se encontró el preset para editar');
+                return;
+            }
+            
+            // Get the new name and words
+            const newName = editPresetNameInput.value.trim();
+            const newWords = editPresetWordsInput.value.trim().split('\n').map(word => word.trim()).filter(word => word);
+            
+            // Validate
+            if (!newName) {
+                showSnackbar('Por favor ingresa un nombre para el preset');
+                return;
+            }
+            
+            if (newWords.length < 25) {
+                showSnackbar('Se necesitan al menos 25 palabras para un preset');
+                return;
+            }
+            
+            // Update the preset
+            gameState.presets[presetId] = {
+                ...gameState.presets[presetId],
+                displayName: newName,
+                words: newWords
+            };
+            
+            // Save to localStorage
+            try {
+                localStorage.setItem('codeNamePresets', JSON.stringify(gameState.presets));
+            } catch (e) {
+                console.warn('No se pudieron guardar los presets en localStorage', e);
+            }
+            
+            // Update the UI if this is the current preset
+            if (gameState.currentPreset === presetId) {
+                createCards();
+            }
+            
+            // Update preset selection screen
+            updatePresetSelectionScreen();
+            
+            // Close the modal
+            closeEditPresetModal();
+            
+            // Show success notification
+            showSnackbar(`Preset "${newName}" actualizado con éxito`);
+        }
+
+        // Utility function to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        // Show snackbar notification
+        function showSnackbar(message) {
+            const snackbar = document.getElementById("snackbar");
+            snackbar.textContent = message;
+            snackbar.className = "snackbar show";
+            
+            // After 3 seconds, remove the show class
+            setTimeout(function(){ 
+                snackbar.className = snackbar.className.replace("show", ""); 
+            }, 3000);
+        }
+
+        // Add keyboard event listener for Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                // Close the spymaster view if it's open
+                if (!showBoardModal.classList.contains('hidden')) {
+                    showBoardModal.classList.add('hidden');
+                    showSnackbar('Vista de espía cerrada con tecla Escape');
+                }
+                
+                // Close the edit preset modal if it's open
+                if (!editPresetModal.classList.contains('hidden')) {
+                    editPresetModal.classList.add('hidden');
+                    gameState.currentEditingPresetId = null;
+                }
+            }
+        });
+
+        // Initialize the game when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            initGame();
+            updateTeamNames();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'961371c311861eb4',t:'MTc1Mjg1NzA3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
